@@ -1,67 +1,118 @@
 import turtle
+import os
 
-wn = turtle.Screen()
-wn.bgcolor("light green")
-wn.title("Spaceship Game")
+win = turtle.Screen()
+win.bgcolor("black")
 
-spaceship = turtle.Turtle()
-spaceship.color("black")
-spaceship.shape('circle')
-spaceship.penup()
+# Create Player
+player = turtle.Turtle()
+player.color("blue")
+player.shape("triangle")
+player.penup()
+player.speed(0)
+player.setposition(0, -250)
+player.setheading(90)
 
-speed = 0
-dead = False
+playerspeed = 15
 
-def up():
-    if spaceship.heading() != 90:
-        spaceship.setheading(90)
+# Create Enemy
+enemy = turtle.Turtle()
+enemy.color("red")
+enemy.shape("circle")
+enemy.penup()
+enemy.speed(0)
+enemy.setposition(-200, 250)
 
-def down():
-    if spaceship.heading() != 270:
-        spaceship.setheading(270)  
+enemyspeed = 2
 
-def left():
-    if spaceship.heading() != 180:
-        spaceship.setheading(180)
+# Player's bullet
+bullet = turtle.Turtle()
+bullet.color("yellow")
+bullet.shape("triangle")
+bullet.penup()
+bullet.speed(0)
+bullet.setheading(90)
+bullet.shapesize(0.5, 0.5)
+bullet.hideturtle()
 
-def right():
-    if spaceship.heading() != 0:
-        spaceship.setheading(0)
+bulletspeed = 20
 
-def space_bar():
-    global speed
-    if speed == 0:
-        speed = 1
+bulletstate = "ready"
+
+# Move Player
+def move_left():
+    x = player.xcor()
+    x -= playerspeed
+    if x < -290:
+        x = -290
+    player.setx(x)
+
+def move_right():
+    x = player.xcor()
+    x += playerspeed
+    if x > 290:
+        x = 290
+    player.setx(x)
+
+def fire_bullet():
+    global bulletstate
+    if bulletstate == "ready":
+        bulletstate = "fire"
+        x = player.xcor()
+        y = player.ycor() + 10
+        bullet.setposition(x, y)
+        bullet.showturtle()
+
+def is_collision(t1, t2):
+    distance = abs(t1.distance(t2))
+    if distance < 15:
+        return True
     else:
-        speed = 0
+        return False
 
-def check_boundary():
-    x, y = spaceship.position()
-    if x < -400 or x > 400 or y < -400 or y > 400:
-        spaceship.color("red")
-        wn.bgcolor("black")
-        global dead
-        dead = True
+# Keyboard bindings
+turtle.listen()
+turtle.onkey(move_left, "Left")
+turtle.onkey(move_right, "Right")
+turtle.onkey(fire_bullet, "space")
 
-wn.listen()
-wn.onkey(up, 'Up')
-wn.onkey(down, 'Down')
-wn.onkey(left, 'Left')
-wn.onkey(right, 'Right')
-wn.onkey(space_bar, 'space')
-
+# Game Loop
 while True:
-    spaceship.forward(speed)
-    check_boundary()
+    # Move Enemy
+    x = enemy.xcor()
+    x += enemyspeed
+    enemy.setx(x)
 
-    if speed == 1:
-        spaceship.speed(10)
-        wn.bgcolor("yellow")
-    elif speed == 0:
-        spaceship.speed(0)
-        wn.bgcolor("light green")
+    if enemy.xcor() > 290:
+        y = enemy.ycor()
+        y -= 40
+        enemyspeed *= -1
+        enemy.sety(y)
 
-    if dead:
+    if enemy.xcor() < -290:
+        y = enemy.ycor()
+        y -= 40
+        enemyspeed *= -1
+        enemy.sety(y)
+
+    # Move Bullet
+    if bulletstate == "fire":
+        y = bullet.ycor()
+        y += bulletspeed
+        bullet.sety(y)
+
+    if bullet.ycor() > 275:
+        bullet.hideturtle()
+        bulletstate = "ready"
+
+    if is_collision(bullet, enemy):
+        bullet.hideturtle()
+        bulletstate = "ready"
+        bullet.setposition(0, -400)
+        enemy.setposition(-200, 250)
+
+    if is_collision(player, enemy):
+        player.hideturtle()
+        enemy.hideturtle()
+        print("Game Over")
         break
-
-wn.mainloop()
